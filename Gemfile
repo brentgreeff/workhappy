@@ -40,8 +40,6 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "simplecov", require: false
 
-  gem "guard", require: false
-  gem "guard-rspec", require: false
 
   gem "lefthook", require: false
 end

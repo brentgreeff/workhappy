@@ -8,3 +8,7 @@ inherit_mode:
 AllCops:
   Exclude:
     - "db/**/*"
+
+# House style is [a, b], not [ a, b ].
+Layout/SpaceInsideArrayLiteralBrackets:
+  Enabled: false

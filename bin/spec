@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+NO_COVERAGE=1 exec "$(dirname "$0")/rspec" "$@"

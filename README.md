@@ -22,6 +22,7 @@ To use your own Postgres instead of Docker, point `config/database.yml`'s `local
 ## Checks
 
 ```sh
-bin/ci                           # rubocop, brakeman, bundler-audit, importmap audit
+bin/rspec                        # the specs; system specs drive headless Chrome via Cuprite
+bin/ci                           # rubocop, brakeman, bundler-audit, importmap audit, then the specs
 bundle exec lefthook install     # optional: run the same gate as a pre-commit hook
 ```

@@ -5,63 +5,128 @@ on:
   push:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  scan_ruby:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Scan for common Rails security vulnerabilities using static analysis
-        run: bin/brakeman --no-pager
-      
-      - name: Scan for known security vulnerabilities in gems used
-        run: bin/bundler-audit
-      
-  scan_js:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Scan for security vulnerabilities in JavaScript dependencies
-        run: bin/importmap audit
-
   lint:
+    name: RuboCop
     runs-on: ubuntu-latest
-    env:
-      RUBOCOP_CACHE_ROOT: tmp/rubocop
+    timeout-minutes: 2
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: .ruby-version
           bundler-cache: true
+      - run: bin/rubocop -f github
 
-      - name: Prepare RuboCop cache
-        uses: actions/cache@v4
-        env:
-          DEPENDENCIES_HASH: ${{ hashFiles('.ruby-version', '**/.rubocop.yml', '**/.rubocop_todo.yml', 'Gemfile.lock') }}
+  scan_ruby:
+    name: Security scan (Brakeman + bundler-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
         with:
-          path: ${{ env.RUBOCOP_CACHE_ROOT }}
-          key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-${{ github.ref_name == github.event.repository.default_branch && github.run_id || 'default' }}
-          restore-keys: |
-            rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - name: Brakeman (static security scan)
+        run: bin/brakeman -q --no-pager --no-summary
+      - name: bundler-audit (gem CVE scan)
+        run: bin/bundler-audit check --update
 
-      - name: Lint code for consistent style
-        run: bin/rubocop -f github
+  scan_js:
+    name: Security scan (importmap audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - run: bin/importmap audit
 
+  test:
+    name: RSpec (unit / request)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: workhappy
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5434:5432   # database.yml points test at 5434 (local docker-compose convention)
+        options: >-
+          --health-cmd="pg_isready -U workhappy"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --tmpfs /var/lib/postgresql/data
+    env:
+      RAILS_ENV: test
+      NO_COVERAGE: "1"   # SimpleCov branch tracking adds 15-25% Ruby time; report unused in CI
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - name: Build Tailwind CSS
+        # app/assets/builds is gitignored; propshaft raises on the missing
+        # stylesheet if an HTML-rendering spec runs without it.
+        run: bin/rails tailwindcss:build
+      - name: Prepare test database
+        run: bin/rails db:create db:schema:load
+      - name: RSpec (excludes spec/system)
+        run: bin/rspec --exclude-pattern "spec/system/**/*_spec.rb"
+
+  system_test:
+    name: RSpec (system)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: workhappy
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd="pg_isready -U workhappy"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --tmpfs /var/lib/postgresql/data
+    env:
+      RAILS_ENV: test
+      NO_COVERAGE: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+      - uses: browser-actions/setup-chrome@v2   # Cuprite/Ferrum needs a Chrome binary
+      - name: Build Tailwind CSS
+        run: bin/rails tailwindcss:build
+      - name: Prepare test database
+        run: bin/rails db:create db:schema:load
+      - name: RSpec (spec/system)
+        # --format documentation names each example in the live log, so a hanging
+        # example is identifiable instantly (progress dots only appear on completion).
+        run: bin/rspec spec/system --format documentation
+      - name: Upload failure screenshots
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: capybara-screenshots
+          path: |
+            tmp/capybara
+            tmp/screenshots
+          if-no-files-found: ignore
