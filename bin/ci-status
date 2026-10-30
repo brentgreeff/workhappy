@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Poll GitHub Actions for the current HEAD until the CI workflow completes.
+# Usage: bin/ci-status
+set -euo pipefail
+
+# 30s × 40 polls = 20 min cap — far above this suite's normal runtime; the loop
+# exits as soon as the run completes.
+POLL_INTERVAL=30
+MAX_POLLS=40
+# Runs are matched to THIS commit, so a stale run from an earlier push can never be
+# mistaken for the current one. Give the API a few polls to register a new push
+# before concluding the workflow simply was not triggered.
+GRACE_POLLS=3
+
+echo "=== CI Status ==="
+echo ""
+
+sha_full=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+local_sha=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+local_time=$(git log -1 --format='%ar' 2>/dev/null || echo "unknown")
+# shellcheck disable=SC1083  # @{u} is git's upstream syntax, not a brace expansion
+remote_branch=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "none")
+if [[ "$remote_branch" != "none" ]]; then
+  remote_sha=$(git rev-parse --short "$remote_branch" 2>/dev/null || echo "unknown")
+  if [[ "$local_sha" == "$remote_sha" ]]; then
+    echo "HEAD: $local_sha ($local_time, pushed)"
+  else
+    echo "HEAD: $local_sha ($local_time) — remote: $remote_sha (NOT PUSHED)"
+  fi
+else
+  echo "HEAD: $local_sha ($local_time) — no upstream set (NOT PUSHED)"
+fi
+echo ""
+
+# Newest CI run at the current commit; "" if none.
+run_for_head() {
+  # Single quotes are deliberate: $sha is a jq variable bound by --arg, not a shell variable.
+  # shellcheck disable=SC2016
+  echo "$ALL_RUNS" | jq -r --arg sha "$sha_full" \
+    '[.[] | select(.headSha == $sha and .name == "CI")] | sort_by(.createdAt) | reverse | .[0] // empty'
+}
+
+poll=0
+while true; do
+  poll=$((poll + 1))
+
+  ALL_RUNS=$(gh run list --limit 30 \
+    --json name,status,conclusion,databaseId,headSha,createdAt 2>/dev/null || echo "[]")
+  run=$(run_for_head)
+
+  # Nothing registered yet for this commit — either the push is still landing, or
+  # (after the grace window) it genuinely was not pushed.
+  if [[ -z "$run" ]]; then
+    if [[ $poll -gt $GRACE_POLLS ]]; then
+      echo "No runs found for $local_sha"
+      echo ""
+      echo "STATUS: no_runs"
+      exit 0
+    fi
+    echo "Poll $poll — no runs for $local_sha yet, waiting"
+    sleep $POLL_INTERVAL
+    continue
+  fi
+
+  id=$(echo "$run" | jq -r '.databaseId')
+
+  if [[ "$(echo "$run" | jq -r '.status')" != "completed" ]]; then
+    echo "Poll $poll — commit $local_sha — in progress"
+    gh run view "$id" --json jobs --jq '.jobs[] | "    \(.name): \(.status) \(.conclusion)"' 2>/dev/null || true
+    echo ""
+
+    if [[ $poll -ge $MAX_POLLS ]]; then
+      echo "Gave up after $((poll * POLL_INTERVAL))s"
+      echo ""
+      echo "STATUS: timeout"
+      exit 1
+    fi
+
+    echo "Sleeping ${POLL_INTERVAL}s..."
+    sleep $POLL_INTERVAL
+    continue
+  fi
+
+  conclusion=$(echo "$run" | jq -r '.conclusion')
+  echo "Commit: $local_sha — $conclusion"
+  gh run view "$id" --json jobs --jq '.jobs[] | "    \(.name): \(.conclusion)"' 2>/dev/null || true
+  echo ""
+
+  if [[ "$conclusion" == "success" ]]; then
+    echo "STATUS: success"
+    exit 0
+  fi
+
+  echo "=== Failed Logs ==="
+  echo ""
+  gh run view "$id" --log-failed 2>/dev/null || echo "(could not fetch logs)"
+  echo ""
+  echo "STATUS: failure"
+  exit 1
+done
