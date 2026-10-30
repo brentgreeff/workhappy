@@ -1,8 +1,8 @@
-# Pre-commit gate — mirrors CI (rubocop + security scans).
+# Pre-commit gate — mirrors CI (rubocop, tsc, security scans).
 # Install once (after `bundle install`):  bundle exec lefthook install
 # Skip for a single commit:               LEFTHOOK=0 git commit
 #
-# Requires binstubs: bin/rubocop, bin/brakeman, bin/bundler-audit, bin/importmap
+# Requires binstubs: bin/rubocop, bin/brakeman, bin/bundler-audit; and node_modules (npm install)
 
 pre-commit:
   parallel: true
@@ -10,14 +10,18 @@ pre-commit:
     rubocop:
       tags: backend style
       glob: "*.rb"
-      exclude: '(^db/)|(^bin/)|(^vendor/)'
+      exclude: '(^db/)|(^bin/)|(^vendor/)|(^node_modules/)'
       run: bin/rubocop --force-exclusion {staged_files}
+    typecheck:
+      tags: frontend types
+      glob: "*.ts"
+      run: npm run typecheck
     brakeman:
       tags: security
       run: bin/brakeman -q --no-pager --no-summary
     bundler-audit:
       tags: security
       run: bin/bundler-audit check --update
-    importmap-audit:
+    npm-audit:
       tags: security
-      run: bin/importmap audit
+      run: npm audit --audit-level=high

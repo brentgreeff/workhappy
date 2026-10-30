@@ -38,16 +38,30 @@ jobs:
         run: bin/bundler-audit check --update
 
   scan_js:
-    name: Security scan (importmap audit)
+    name: Security scan (npm audit)
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v7
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/setup-node@v4
         with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-      - run: bin/importmap audit
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+
+  typecheck:
+    name: TypeScript (tsc)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
 
   test:
     name: RSpec (unit / request)
@@ -76,9 +90,17 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install JS deps
+        run: npm ci
+      - name: Build JS (esbuild)
+        # app/assets/builds is gitignored; propshaft raises on the missing bundle the
+        # moment a spec renders the layout.
+        run: npm run build
       - name: Build Tailwind CSS
-        # app/assets/builds is gitignored; propshaft raises on the missing
-        # stylesheet if an HTML-rendering spec runs without it.
         run: bin/rails tailwindcss:build
       - name: Prepare test database
         run: bin/rails db:create db:schema:load
@@ -113,6 +135,16 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
       - uses: browser-actions/setup-chrome@v2   # Cuprite/Ferrum needs a Chrome binary
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install JS deps
+        run: npm ci
+      - name: Build JS (esbuild)
+        # app/assets/builds is gitignored; propshaft raises on the missing bundle the
+        # moment a spec renders the layout.
+        run: npm run build
       - name: Build Tailwind CSS
         run: bin/rails tailwindcss:build
       - name: Prepare test database

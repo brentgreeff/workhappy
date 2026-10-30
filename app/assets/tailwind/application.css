@@ -5,3 +5,4 @@
 @source not "../../../tmp";
 @source not "../../../log";
 @source not "../builds";
+@source not "../../../node_modules";
