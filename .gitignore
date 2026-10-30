@@ -36,3 +36,11 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+/coverage
+/spec/examples.txt
+
+# Internal Claude context — never commit.
+/CLAUDE.md
+/.claude/
+/docs/

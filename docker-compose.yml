@@ -1,0 +1,14 @@
+volumes:
+  db_data:
+
+services:
+  database:
+    image: postgres:17
+    ports:
+      - "5434:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=workhappy
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=workhappy_development

@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* The v4 watcher ignores .gitignore (tailwindcss#15684): without these, every bootsnap
+   cache write and every request's log line triggers a rescan. */
+@source not "../../../tmp";
+@source not "../../../log";
+@source not "../builds";

@@ -1,24 +1,27 @@
-# README
+# Workhappy
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+A small Rails slice around employee health assessments: a company-scoped CSV export, one measured dashboard improvement, and a status normalisation with a safe release plan. Design and trade-offs are in [SOLUTION.md](SOLUTION.md).
 
-Things you may want to cover:
+## Stack
 
-* Ruby version
+Rails 8.1.4 · Ruby 3.4.10 (`.ruby-version`) · PostgreSQL 17 · Propshaft + importmap · Tailwind (standalone binary) · Solid Queue/Cache/Cable on the one database.
 
-* System dependencies
+## Run locally
 
-* Configuration
+Docker provides Postgres; nothing else is needed beyond Ruby and Bundler.
 
-* Database creation
+```sh
+docker compose up -d   # Postgres 17 on localhost:5434, user/password: workhappy/password
+bin/setup              # bundle install, db:prepare, then starts bin/dev
+```
 
-* Database initialization
+The app is on http://localhost:3002. On later runs, `bin/dev` alone starts the server and the Tailwind watcher.
 
-* How to run the test suite
+To use your own Postgres instead of Docker, point `config/database.yml`'s `local` block at it.
 
-* Services (job queues, cache servers, search engines, etc.)
+## Checks
 
-* Deployment instructions
-
-* ...
+```sh
+bin/ci                           # rubocop, brakeman, bundler-audit, importmap audit
+bundle exec lefthook install     # optional: run the same gate as a pre-commit hook
+```

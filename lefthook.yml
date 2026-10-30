@@ -1,0 +1,23 @@
+# Pre-commit gate — mirrors CI (rubocop + security scans).
+# Install once (after `bundle install`):  bundle exec lefthook install
+# Skip for a single commit:               LEFTHOOK=0 git commit
+#
+# Requires binstubs: bin/rubocop, bin/brakeman, bin/bundler-audit, bin/importmap
+
+pre-commit:
+  parallel: true
+  commands:
+    rubocop:
+      tags: backend style
+      glob: "*.rb"
+      exclude: '(^db/)|(^bin/)|(^vendor/)'
+      run: bin/rubocop --force-exclusion {staged_files}
+    brakeman:
+      tags: security
+      run: bin/brakeman -q --no-pager --no-summary
+    bundler-audit:
+      tags: security
+      run: bin/bundler-audit check --update
+    importmap-audit:
+      tags: security
+      run: bin/importmap audit
