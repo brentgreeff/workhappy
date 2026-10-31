@@ -12,7 +12,7 @@ class ExportJob < ApplicationJob
     export.processing!
     rows = 0
 
-    Tempfile.create([export.filename, ".csv"]) do |file|
+    Tempfile.create(["export-#{export.id}-", ".csv"]) do |file|
       csv = CSV.new(file)
       csv << HEADER
       export.assessments.select(:id, :created_at, :status).find_each(batch_size: 1_000) do |assessment|
