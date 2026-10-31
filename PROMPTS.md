@@ -65,3 +65,9 @@ Why: The status census is step one of Task 3's release plan: run it on productio
 > An assessment has two independent foreign keys, so it can point at another company's employee. Enforce same-company at the database with a composite foreign key, add the model validation for a readable error, and a spec that builds the mismatch.
 
 Why: Scoping every query by `company_id` does not stop a row that carries another tenant's employee and email. A composite foreign key on `(employee_id, company_id)` makes that row impossible, including through `insert_all` and the console, which a validation never sees.
+
+## 15. Census as a module, with specs
+
+> Extract the bulk of the census rake tasks into a module with specs, the tasks only print. Then fix: - Status census crashes on an empty table, - responses census crashes on non-object JSON, and explain in README: `it scans the whole table` and `expands every JSON value` run off peak.
+
+`ljust(nil)` on an empty table and `jsonb_each` on an array are both real crashes, now pinned by specs including one that runs each task against an empty database.

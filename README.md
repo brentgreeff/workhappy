@@ -37,7 +37,7 @@ bin/rails assessments:status_census      # every distinct status value with its 
 bin/rails assessments:responses_census   # nil and empty responses_json, then per key: number, string, null, missing
 ```
 
-Run the status census before and after the status backfill to prove the mapping. Both tasks are a few grouped queries and safe to run against production.
+Run the status census before and after the status backfill to prove the mapping. Both tasks are read-only but scan the whole table, and the second . On a large production table run them off-peak or against a follower, with a statement timeout set.
 
 ## Checks
 
