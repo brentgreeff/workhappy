@@ -6,3 +6,5 @@
   company = Company.find_or_create_by!(name: company_name)
   company.users.find_or_create_by!(email_address:) { |u| u.password = "password" }
 end
+
+load Rails.root.join("db/seeds/employees.rb")

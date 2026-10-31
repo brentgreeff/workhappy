@@ -41,3 +41,9 @@ Why: the brief names TypeScript as a core technology and wants the export UI wri
 > Add sign-in with the Rails 8 authentication generator: email and password, no password reset. Add a Company model; a user belongs to a company, and the signed-in user's company is the tenant. Replace the ERB layout with Slim. Add flash partial and light/dark mode. Seeds with two companies and one admin each.
 
 Why: Brief says a company admin may only see their own company and that access must never come from a client-supplied company id. That needs a session, which needs a sign-in. The Rails generator is the most basic version. Added `company_id` on users and `Current.company` as the one place the tenant comes from. The theme controller is TypeScript so the bundle has something real to type-check before the export UI arrives.
+
+## 11. Employees
+
+> Run the model generator for Employee: company, name, email. Seed a fixed roster per company in its own seed file, called from the primary seed file.
+
+Why: Brief lists employees as an entity assessments belong to, and asks for no UI for them. A table and seeds are enough. Fixed roster so re-seeding is a no-op and the assessments seed can reuse the same people.
