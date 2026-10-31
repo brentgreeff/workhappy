@@ -77,3 +77,9 @@ Why: Scoping every query by `company_id` does not stop a row that carries anothe
 > Seeds must refuse to run in production, and only touch the two demo companies they create, and use a fixed anchor date so the data is identical on every machine.
 
 Why: The seeds publish two admin passwords. Dates were relative to now. two fresh seeds now produce the same SHA-256 digest.
+
+## 17. Log filtering and the factory
+
+> Add the assessment keys to filter_parameters so answers and free text never reach the request log, with a spec. Add the missing `lighting` answer to the assessment factory.
+
+Why: Brief says logs contained raw assessment data. The default filter list covers email and passwords but not `responses_json`. The factory had four of the five questions, so a "normal case" score test would have been missing an answer.

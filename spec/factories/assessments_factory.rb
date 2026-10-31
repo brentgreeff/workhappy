@@ -4,6 +4,8 @@ FactoryBot.define do
     company { employee.company }
     employee_email { employee.email }
     status { 'completed' }
-    responses_json { { 'posture' => 4, 'screen' => 3, 'chair' => 5, 'breaks' => 2, 'comments' => 'All fine' } }
+    responses_json do
+      { 'posture' => 4, 'screen' => 3, 'chair' => 5, 'breaks' => 2, 'lighting' => 4, 'comments' => 'All fine' }
+    end
   end
 end
