@@ -28,6 +28,10 @@ Rails.application.configure do
   # Change to :null_store to avoid any caching.
   config.cache_store = :memory_store
 
+  # The real queue, not the in-process async adapter, so a local export goes through the same
+  # path as production. bin/dev runs the supervisor inside Puma (SOLID_QUEUE_IN_PUMA=1).
+  config.active_job.queue_adapter = :solid_queue
+
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 

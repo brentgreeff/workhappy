@@ -17,6 +17,12 @@ bin/setup              # bundle install, npm install, db:prepare, then starts bi
 
 The app is on http://localhost:3002. On later runs, `bin/dev` alone starts the server, the esbuild watcher and the Tailwind watcher.
 
+## Background jobs on localhost
+
+Development uses Solid Queue, the same adapter as production, so an export on localhost is a real queued job. `bin/dev` starts the Solid Queue supervisor inside Puma: the `web` line of `Procfile.dev` sets `SOLID_QUEUE_IN_PUMA=1`, which turns on the plugin in `config/puma.rb`. No separate worker process is needed. The same line sets `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`, which macOS needs before it will let the forked worker run ([solid_queue#407](https://github.com/rails/solid_queue/issues/407)); it does nothing on Linux.
+
+To run the worker on its own instead, start the server without that variable and run `bin/jobs` in a second terminal. Queued, running and finished jobs are rows in the `solid_queue_*` tables on the one database.
+
 ## How to login on localhost
 
 `bin/setup` seeds two companies with one admin each (`bin/rails db:seed` to re-run). Open http://localhost:3002 and sign in as either. Each admin only ever sees their own company.
@@ -25,6 +31,19 @@ The app is on http://localhost:3002. On later runs, `bin/dev` alone starts the s
 |---|---|---|
 | Harbour Logistics | admin@harbour.example | password |
 | Meridian Legal | admin@meridian.example | password |
+
+## Try the export
+
+Sign in, optionally set a From date, a To date (inclusive) and a Status, then click **Export CSV**. The status beside the button moves from Queued to Ready with the row count, and a **Download CSV** link appears. The file holds `id, created_at, status, score` only: no email, no answers, no free text. Status is the canonical value, so filtering on Completed also returns rows still stored as `complete`, `comp` or `done`.
+
+The export is built by a Solid Queue job (see "Background jobs on localhost" above). Files are stored under `storage/` locally. Exports older than a day are purged hourly in production.
+
+To check a downloaded file:
+
+```sh
+qsv validate ~/Downloads/assessments-1.csv   # RFC 4180 check (brew install qsv)
+qsv stats ~/Downloads/assessments-1.csv      # column profile: types, ranges, nulls
+```
 
 To use your own Postgres instead of Docker, point `config/database.yml`'s `local` block at it.
 

@@ -83,3 +83,25 @@ Why: The seeds publish two admin passwords. Dates were relative to now. two fres
 > Add the assessment keys to filter_parameters so answers and free text never reach the request log, with a spec. Add the missing `lighting` answer to the assessment factory.
 
 Why: Brief says logs contained raw assessment data. The default filter list covers email and passwords but not `responses_json`. The factory had four of the five questions, so a "normal case" score test would have been missing an answer.
+
+## 18. Task 1: async CSV export
+
+> Build the export as a Solid Queue job, not a streamed response. Start with a failing system spec covering the filter permutations. Rows must come from `Current.company`, not from request params. Two filters, `date range` and `status`. File must have id, date, canonical status and score. No email, no answers, no free text. Add one Stimulus controller that submits and polls; another company's export is a 404. filter values are never logged.
+
+Why: Streaming is a no-go: Heroku's router drops a response that goes 30 seconds without a byte, and a big tenant could hit that. Disk storage cannot work on Heroku because the worker writes the file and the web dyno serves it, so production needs object storage.
+
+## 19. Solid Queue on localhost
+
+> I want real Solid Queue on localhost, not the in-process adapter. Update the instructions.
+
+Why: The demo should go through the same queue as production. Development now uses the `solid_queue` adapter and `bin/dev` starts the supervisor inside Puma, so one command still runs everything.
+
+## 20. All time link
+
+> Add an "All time" link that fills the date range with the company's earliest and latest dates. Then validate a downloaded export.
+
+Why: Tells the admin what range exists.
+
+## 21. Download integrity.
+
+Check the downloaded file with qsv: RFC 4180 valid, 300 rows, ids contiguous, timestamps uniform, six status values and no blanks.

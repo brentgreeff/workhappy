@@ -10,9 +10,21 @@ class Assessment < ApplicationRecord
   scope :joins_each_response, -> { joins("CROSS JOIN LATERAL jsonb_each(assessments.responses_json)") }
   scope :grouped_by_response_key_and_type, -> { group("key", "jsonb_typeof(value)") }
 
+  # The two filters the brief allows. Dates are whole days in the app zone; the end is
+  # inclusive, done as an exclusive bound on the next midnight so an index on created_at works.
+  scope :created_from, ->(date) { where(created_at: date.in_time_zone..) }
+  scope :created_through, ->(date) { where(created_at: ...(date + 1).in_time_zone) }
+  # Until the backfill runs, rows still carry legacy spellings and odd casing, so a filter for
+  # a canonical status has to match all of them.
+  scope :with_status, ->(canonical) { where("LOWER(TRIM(status)) IN (?)", AssessmentStatus.spellings(canonical)) }
+
   # The composite foreign key enforces this at the database; the validation gives the
   # readable error.
   validate :employee_belongs_to_company
+
+  def canonical_status
+    AssessmentStatus.normalize(status) || AssessmentStatus::UNMAPPED
+  end
 
   private
 
