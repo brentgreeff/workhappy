@@ -1,6 +1,6 @@
 # Ten years of a status column nobody constrained, and answers stored however the form of the
-# day sent them. Deterministic (fixed RNG seed) and skipped for any company that already has
-# rows, so re-seeding changes nothing.
+# day sent them. Deterministic (RNG seeded per company, dates relative to a fixed anchor) and
+# skipped for any company that already has rows, so re-seeding changes nothing.
 PER_COMPANY = 300
 
 # The brief's observed values, weighted so the canonical five dominate. "cancelled" is the
@@ -46,26 +46,29 @@ def responses(rng)
   answers
 end
 
-Company.find_each do |company|
-  next if company.assessments.exists?
+def seed_assessments(companies, anchor:)
+  companies.each do |company|
+    next if company.assessments.exists?
 
-  rng = Random.new(company.id)
-  employees = company.employees.to_a
-  now = Time.current
+    rng = Random.new(company.id)
+    employees = company.employees.order(:id).to_a
 
-  rows = Array.new(PER_COMPANY) do
-    employee = employees[rng.rand(employees.size)]
-    created_at = now - rng.rand(0...(6 * 365)).days - rng.rand(0...86_400).seconds
-    {
-      company_id: company.id,
-      employee_id: employee.id,
-      employee_email: employee.email,
-      status: weighted_status(rng),
-      responses_json: responses(rng),
-      created_at:,
-      updated_at: created_at
-    }
+    rows = Array.new(PER_COMPANY) do
+      employee = employees[rng.rand(employees.size)]
+      created_at = anchor - rng.rand(0...(6 * 365)).days - rng.rand(0...86_400).seconds
+      {
+        company_id: company.id,
+        employee_id: employee.id,
+        employee_email: employee.email,
+        status: weighted_status(rng),
+        responses_json: responses(rng),
+        created_at:,
+        updated_at: created_at
+      }
+    end
+
+    # Bypasses validations on purpose: these rows are the legacy data the validations will
+    # later be written against.
+    Assessment.insert_all(rows)
   end
-
-  Assessment.insert_all(rows)
 end

@@ -10,13 +10,15 @@ LAST_NAMES = %w[
   Mokoena Novak Okafor Petersen Quist Reyes Singh Thorne Usman Varga Walsh Xu Young Zulu
 ].freeze
 
-Company.find_each do |company|
-  domain = "#{company.name.split.first.downcase}.example"
+def seed_employees(companies)
+  companies.each do |company|
+    domain = "#{company.name.split.first.downcase}.example"
 
-  FIRST_NAMES.each_with_index do |first, i|
-    last = LAST_NAMES[i]
-    company.employees.find_or_create_by!(email: "#{first}.#{last}@#{domain}".downcase) do |employee|
-      employee.name = "#{first} #{last}"
+    FIRST_NAMES.each_with_index do |first, i|
+      last = LAST_NAMES[i]
+      company.employees.find_or_create_by!(email: "#{first}.#{last}@#{domain}".downcase) do |employee|
+        employee.name = "#{first} #{last}"
+      end
     end
   end
 end

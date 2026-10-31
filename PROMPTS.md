@@ -71,3 +71,9 @@ Why: Scoping every query by `company_id` does not stop a row that carries anothe
 > Extract the bulk of the census rake tasks into a module with specs, the tasks only print. Then fix: - Status census crashes on an empty table, - responses census crashes on non-object JSON, and explain in README: `it scans the whole table` and `expands every JSON value` run off peak.
 
 `ljust(nil)` on an empty table and `jsonb_each` on an array are both real crashes, now pinned by specs including one that runs each task against an empty database.
+
+## 16. Seeds: production guard, demo scope, fixed dates
+
+> Seeds must refuse to run in production, and only touch the two demo companies they create, and use a fixed anchor date so the data is identical on every machine.
+
+Why: The seeds publish two admin passwords. Dates were relative to now. two fresh seeds now produce the same SHA-256 digest.
