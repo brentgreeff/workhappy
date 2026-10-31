@@ -1,0 +1,9 @@
+/ Applies the stored or OS theme before first paint, so the page never flashes the wrong one.
+/ Same rule as the theme controller; must render above the stylesheet link.
+javascript:
+  (() => {
+    const pref = localStorage.getItem('theme');
+    const isDark = pref === 'dark' ||
+      (!pref && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', isDark);
+  })();

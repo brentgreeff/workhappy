@@ -1,0 +1,5 @@
+/ The block is the right-hand side: each layout decides what sits beside the theme menu.
+header.flex.justify-between.items-center.p-4
+  = link_to "Workhappy", root_path, class: "text-lg font-semibold"
+  .flex.items-center.gap-3
+    = yield

@@ -10,6 +10,8 @@ require 'support/screenshots'
 require 'support/retry'
 require 'support/active_job'
 require 'support/mailer'
+require 'support/sign_in'
+require 'support/request_auth'
 
 begin
   ActiveRecord::Migration.maintain_test_schema!

@@ -1,0 +1,4 @@
+- if flash[:alert]
+  .js-flash-alert.mt-4.text-red-600 data-turbo-temporary=true = flash[:alert]
+- if flash[:notice]
+  .js-flash-notice.mt-4.text-green-600 data-turbo-temporary=true = flash[:notice]

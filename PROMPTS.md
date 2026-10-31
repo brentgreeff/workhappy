@@ -24,7 +24,7 @@
 
 ## 7. README
 
-> Add minimal README setup instructions. Plain commands only.
+> Add minimal README setup instructions.
 
 ## 8. Assistant context
 
@@ -33,3 +33,11 @@
 ## 9. TypeScript
 
 > Add TypeScript for the front end: jsbundling-rails with esbuild through npm, real .ts source, tsc strict with noEmit as the type check, importmap removed. tsc in the commit gate and in CI, npm audit in place of the importmap audit, and the spec jobs build the bundle before they run.
+
+Why: the brief names TypeScript as a core technology and wants the export UI written in it. Rails 8 ships importmap, which serves JavaScript as-is with no compile step, so there was nowhere for a `.ts` file to go. The two honest options were a one-off tsc step feeding importmap, or jsbundling-rails with a bundler. I chose esbuild through npm: it is the standard Rails answer, one dependency, a build command and a watcher. esbuild strips types without checking them, so `tsc --noEmit` is the type check and runs in the commit gate and CI. Node becomes a requirement to run the app, which the README states.
+
+## 10. Sign-in, companies, layout and theme
+
+> Add sign-in with the Rails 8 authentication generator: email and password, no password reset. Add a Company model; a user belongs to a company, and the signed-in user's company is the tenant. Replace the ERB layout with Slim. Add flash partial and light/dark mode. Seeds with two companies and one admin each.
+
+Why: Brief says a company admin may only see their own company and that access must never come from a client-supplied company id. That needs a session, which needs a sign-in. The Rails generator is the most basic version. Added `company_id` on users and `Current.company` as the one place the tenant comes from. The theme controller is TypeScript so the bundle has something real to type-check before the export UI arrives.

@@ -1,0 +1,8 @@
+.mx-auto.w-full.max-w-sm.mt-20
+  h1.text-2xl.font-semibold.mb-6 Sign in
+  = form_with url: session_path do |form|
+    = form.label :email_address, "Email address", class: "block mb-1"
+    = form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", value: params[:email_address], class: "mb-4 w-full rounded border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
+    = form.label :password, "Password", class: "block mb-1"
+    = form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72, class: "mb-4 w-full rounded border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
+    = form.submit "Sign in", class: "cursor-pointer rounded bg-gray-900 px-4 py-2 text-white dark:bg-gray-100 dark:text-gray-900"

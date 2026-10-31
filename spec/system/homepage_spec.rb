@@ -1,9 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe 'Homepage', type: :system do
-  it 'renders' do
-    visit root_path
+  it 'shows the signed-in admin their own company' do
+    user = create(:user, company_name: 'Harbour Logistics')
+    sign_in user
 
-    expect(page).to have_css 'h1', text: 'Workhappy'
+    expect(page).to have_css 'h1', text: 'Harbour Logistics'
   end
 end
