@@ -58,6 +58,10 @@ bin/rails assessments:responses_census   # nil and empty responses_json, then pe
 
 Run the status census before and after the status backfill to prove the mapping. Both tasks are read-only but scan the whole table, and the second . On a large production table run them off-peak or against a follower, with a statement timeout set.
 
+## Deploying to Heroku
+
+`Procfile` runs one web dyno with the Solid Queue supervisor inside Puma, and `bin/rails db:migrate` as the release phase. Export files go to a bucket, because dynos do not share a disk and lose it on restart. Config vars: `RAILS_MASTER_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, and optionally `AWS_REGION` (default `eu-west-2`). `DATABASE_URL` comes from the Postgres add-on. This wiring has not been exercised against a live app in this repository.
+
 ## Checks
 
 ```sh

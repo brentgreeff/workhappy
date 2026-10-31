@@ -15,6 +15,9 @@ gem "bcrypt", "~> 3.1.7"
 # A bundled gem since Ruby 3.4: not loadable under Bundler unless declared.
 gem "csv"
 
+# Export files in production: Active Storage's S3 service. Loaded only when the service is used.
+gem "aws-sdk-s3", require: false
+
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 gem "solid_cache"
