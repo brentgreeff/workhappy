@@ -47,3 +47,9 @@ Why: Brief says a company admin may only see their own company and that access m
 > Run the model generator for Employee: company, name, email. Seed a fixed roster per company in its own seed file, called from the primary seed file.
 
 Why: Brief lists employees as an entity assessments belong to, and asks for no UI for them. A table and seeds are enough. Fixed roster so re-seeding is a no-op and the assessments seed can reuse the same people.
+
+## 12. Assessments
+
+> Run the model generator for an Assessment with the fields: company, employee, employee_email, status as a plain string, responses_json as jsonb. No status validation and no score yet. Seed a few hundred per company over several years in its own seed file: statuses from the brief's list including empty string and nil, answers 1 to 5 with the legacy mess mixed in (strings, nulls, missing keys, empty objects), one free-text field.
+
+Why: This is the "before". Task 2 fixes the score and Task 3 constrains the status, so neither exists yet and the commit history shows the change. Only the indexes the references give: the dashboard index is Task 2's measurment. `employee_email` stays on the row because the brief describes it and Task 1 redacts it. Seed should be the same on every machine.

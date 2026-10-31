@@ -8,3 +8,4 @@
 end
 
 load Rails.root.join("db/seeds/employees.rb")
+load Rails.root.join("db/seeds/assessments.rb")
