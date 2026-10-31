@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_31_134231) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_31_150236) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,6 +39,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_134231) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["company_id"], name: "index_employees_on_company_id"
+    t.index ["id", "company_id"], name: "index_employees_on_id_and_company_id", unique: true
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -231,7 +232,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_134231) do
   end
 
   add_foreign_key "assessments", "companies"
-  add_foreign_key "assessments", "employees"
+  add_foreign_key "assessments", "employees", column: ["employee_id", "company_id"], primary_key: ["id", "company_id"]
   add_foreign_key "employees", "companies"
   add_foreign_key "sessions", "users"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade

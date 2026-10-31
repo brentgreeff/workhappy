@@ -59,3 +59,9 @@ Why: This is the "before". Task 2 fixes the score and Task 3 constrains the stat
 > Write 2 rake tasks to audot the seed data: one counting `every distinct status value`, another  `counting the shapes of responses_json` (nil, empty, and per key - how many answers by type, nulls or missing). Read-only.
 
 Why: The status census is step one of Task 3's release plan: run it on production before writing the mapping, and again after the backfill to prove it. The responses census quantifies why the score goes blank, which is where Task 2 starts. Rake because they need the app loaded and `bin/rails task` - to run on Heroku.
+
+## 14. Tenant integrity between assessments and employees
+
+> An assessment has two independent foreign keys, so it can point at another company's employee. Enforce same-company at the database with a composite foreign key, add the model validation for a readable error, and a spec that builds the mismatch.
+
+Why: Scoping every query by `company_id` does not stop a row that carries another tenant's employee and email. A composite foreign key on `(employee_id, company_id)` makes that row impossible, including through `insert_all` and the console, which a validation never sees.
