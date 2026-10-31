@@ -28,6 +28,17 @@ The app is on http://localhost:3002. On later runs, `bin/dev` alone starts the s
 
 To use your own Postgres instead of Docker, point `config/database.yml`'s `local` block at it.
 
+## Data census
+
+Two read-only rake tasks show what is in the assessments table. The status column holds years of free-text values and the answers JSON is inconsistently shaped; these tasks measure that, and [SOLUTION.md](SOLUTION.md) refers to their output.
+
+```sh
+bin/rails assessments:status_census      # every distinct status value with its count
+bin/rails assessments:responses_census   # nil and empty responses_json, then per key: number, string, null, missing
+```
+
+Run the status census before and after the status backfill to prove the mapping. Both tasks are a few grouped queries and safe to run against production.
+
 ## Checks
 
 ```sh

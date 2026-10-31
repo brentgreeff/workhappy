@@ -53,3 +53,9 @@ Why: Brief lists employees as an entity assessments belong to, and asks for no U
 > Run the model generator for an Assessment with the fields: company, employee, employee_email, status as a plain string, responses_json as jsonb. No status validation and no score yet. Seed a few hundred per company over several years in its own seed file: statuses from the brief's list including empty string and nil, answers 1 to 5 with the legacy mess mixed in (strings, nulls, missing keys, empty objects), one free-text field.
 
 Why: This is the "before". Task 2 fixes the score and Task 3 constrains the status, so neither exists yet and the commit history shows the change. Only the indexes the references give: the dashboard index is Task 2's measurment. `employee_email` stays on the row because the brief describes it and Task 1 redacts it. Seed should be the same on every machine.
+
+## 13. Census tasks
+
+> Write 2 rake tasks to audot the seed data: one counting `every distinct status value`, another  `counting the shapes of responses_json` (nil, empty, and per key - how many answers by type, nulls or missing). Read-only.
+
+Why: The status census is step one of Task 3's release plan: run it on production before writing the mapping, and again after the backfill to prove it. The responses census quantifies why the score goes blank, which is where Task 2 starts. Rake because they need the app loaded and `bin/rails task` - to run on Heroku.
