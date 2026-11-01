@@ -19,7 +19,7 @@ The app is on http://localhost:3002. On later runs, `bin/dev` alone starts the s
 
 ## Background jobs on localhost
 
-Development uses Solid Queue, the same adapter as production, so an export on localhost is a real queued job. `bin/dev` starts the Solid Queue supervisor inside Puma: the `web` line of `Procfile.dev` sets `SOLID_QUEUE_IN_PUMA=1`, which turns on the plugin in `config/puma.rb`. No separate worker process is needed. The same line sets `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`, which macOS needs before it will let the forked worker run ([solid_queue#407](https://github.com/rails/solid_queue/issues/407)); it does nothing on Linux.
+Development uses Solid Queue, the same adapter as production, so an export on localhost is a real queued job. `bin/dev` starts the Solid Queue supervisor inside Puma: the `web` line of `Procfile.dev` sets `SOLID_QUEUE_IN_PUMA=1`, which turns on the plugin in `config/puma.rb`. No separate worker process is needed. The same line sets `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`, which macOS needs before it will let the forked worker run ([solid_queue#407](https://github.com/rails/solid_queue/issues/407)); it does nothing on Linux. For the same reason `config/database.yml` sets `gssencmode: disable` on the local anchor: libpq's default Kerberos probe segfaults in a forked worker on macOS ([ruby-pg#767](https://github.com/ged/ruby-pg/pull/767)). Production is not touched by either.
 
 To run the worker on its own instead, start the server without that variable and run `bin/jobs` in a second terminal. Queued, running and finished jobs are rows in the `solid_queue_*` tables on the one database.
 

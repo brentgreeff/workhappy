@@ -1,5 +1,7 @@
 # OBJC_DISABLE_INITIALIZE_FORK_SAFETY: macOS refuses to continue in a forked child once Puma has
 # touched Apple frameworks, so the Solid Queue worker dies at boot without it (solid_queue#407).
+# It only clears the Objective-C guard; the worker's first Postgres connection would still
+# segfault in libpq's Kerberos probe, which `gssencmode: disable` in database.yml turns off.
 web: SOLID_QUEUE_IN_PUMA=1 OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES bin/rails server
 js: npm run build -- --watch
 css: bin/rails tailwindcss:watch

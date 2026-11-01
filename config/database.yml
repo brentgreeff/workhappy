@@ -9,6 +9,10 @@ local: &local
   port: 5434
   username: workhappy
   password: password
+  # libpq's default gssencmode=prefer asks macOS Kerberos for a credential cache over XPC
+  # before each TCP connection; a forked child inherits a dead XPC port and segfaults on it
+  # (ged/ruby-pg#767). Solid Queue's workers are forks of a fork, so local only.
+  gssencmode: disable
 
 development:
   <<: *local
