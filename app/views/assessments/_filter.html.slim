@@ -6,10 +6,10 @@
 = form_with model: filter, scope: :filter, url: root_path, method: :get, data: { controller: "export", export_url_value: exports_path }, class: "js-filter-form flex flex-wrap items-end gap-4" do |form|
   div
     = form.label :from_date, class: "block mb-1 text-sm"
-    = form.date_field :from_date, value: filter.from_date || earliest&.to_date, class: field
+    = form.date_field :from_date, value: filter.shown_from_date, class: field
   div
     = form.label :to_date, class: "block mb-1 text-sm"
-    = form.date_field :to_date, value: filter.to_date || latest&.to_date, class: field
+    = form.date_field :to_date, value: filter.shown_to_date, class: field
   div
     = form.label :status, class: "block mb-1 text-sm"
     = form.select :status, AssessmentFilter.options, { include_blank: "All statuses" }, class: field

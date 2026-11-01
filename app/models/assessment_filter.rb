@@ -10,6 +10,10 @@ class AssessmentFilter
   attribute :to_date, :date
   attribute :status, :string
 
+  # The span of the company's data, shown in the form when no dates are given. Display only:
+  # apply ignores it, because blank dates already mean all time.
+  attr_accessor :earliest, :latest
+
   validates :status, inclusion: { in: STATUSES }, allow_blank: true
   validate :dates_parse, :range_in_order
 
@@ -19,6 +23,9 @@ class AssessmentFilter
     scope = status == AssessmentStatus::UNMAPPED ? scope.unmapped : scope.with_status(status) if status.present?
     scope
   end
+
+  def shown_from_date = from_date || earliest&.to_date
+  def shown_to_date = to_date || latest&.to_date
 
   def to_params
     { from_date:, to_date:, status: }.compact_blank

@@ -4,7 +4,7 @@ class AssessmentsController < ApplicationController
   def index
     @filter = AssessmentFilter.new(filter_params)
     @page = [params[:page].to_i, 1].max
-    @earliest, @latest = Current.company.assessments.pick(Arel.sql("MIN(created_at)"), Arel.sql("MAX(created_at)"))
+    @filter.earliest, @filter.latest = Current.company.assessments.created_span
 
     if @filter.valid?
       list_page

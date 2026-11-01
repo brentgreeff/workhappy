@@ -23,6 +23,11 @@ class Assessment < ApplicationRecord
   }
   scope :unmapped, -> { where(status_v2: nil).where(AssessmentStatus.unmapped_arel) }
 
+  # Earliest and latest created_at in the scope, or [nil, nil] when it is empty.
+  def self.created_span
+    pick(arel_table[:created_at].minimum, arel_table[:created_at].maximum)
+  end
+
   # The composite foreign key enforces this at the database; the validation gives the
   # readable error.
   validate :employee_belongs_to_company
