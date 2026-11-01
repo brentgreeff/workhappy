@@ -32,9 +32,13 @@ To run the worker on its own instead, start the server without that variable and
 | Harbour Logistics | admin@harbour.example | password |
 | Meridian Legal | admin@meridian.example | password |
 
+## The dashboard
+
+Signing in lands on the company's assessments, newest first, 50 per page. The two filters the brief allows, a date range and a status, apply with **Filter**; **All time** fills the range with the span of the company's data. Filtering on a canonical status also matches rows still stored under a legacy spelling, so Completed finds `complete`, `comp` and `done`. Rows whose stored status maps to nothing show as Unmapped.
+
 ## Try the export
 
-Sign in, optionally set a From date, a To date (inclusive) and a Status, then click **Export CSV**. The status beside the button moves from Queued to Ready with the row count, and a **Download CSV** link appears. The file holds `id, created_at, status, score` only: no email, no answers, no free text. Status is the canonical value, so filtering on Completed also returns rows still stored as `complete`, `comp` or `done`.
+On the dashboard, set the filters you want (or none), then click **Export CSV**. The file holds exactly what the form says. The status beside the button moves from Queued to Ready with the row count, and a **Download CSV** link appears. The file holds `id, created_at, status, score` only: no email, no answers, no free text. Status is the canonical value, so filtering on Completed also returns rows still stored as `complete`, `comp` or `done`.
 
 The export is built by a Solid Queue job (see "Background jobs on localhost" above). Files are stored under `storage/` locally. Exports older than a day are purged hourly in production.
 

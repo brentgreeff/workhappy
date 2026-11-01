@@ -1,5 +1,10 @@
 / The block is the right-hand side: each layout decides what sits beside the theme menu.
+/ The tenant shows whenever someone is signed in; the sign-in page has nobody.
 header.flex.justify-between.items-center.p-4
-  = link_to "Workhappy", root_path, class: "text-lg font-semibold"
+  .flex.items-baseline.gap-3
+    = link_to "Workhappy", root_path, class: "text-lg font-semibold"
+    - if Current.user
+      span.text-gray-400 class="dark:text-gray-500" /
+      span.js-company.text-lg = Current.company.name
   .flex.items-center.gap-3
     = yield

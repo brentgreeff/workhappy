@@ -1,0 +1,20 @@
+/ One form, two outcomes. Filter submits it as a GET and re-renders the list. Export CSV posts
+/ the same fields to /exports over fetch (export controller), so the file holds exactly what
+/ the form says, and the page stays put while the export is polled to ready.
+- field = "rounded border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
+= form_with model: filter, scope: :filter, url: root_path, method: :get, data: { controller: "date-range export", export_url_value: exports_path }, class: "js-filter-form flex flex-wrap items-end gap-4" do |form|
+  div
+    = form.label :from_date, class: "block mb-1 text-sm"
+    = form.date_field :from_date, class: field, data: { date_range_target: "from" }
+  div
+    = form.label :to_date, class: "block mb-1 text-sm"
+    = form.date_field :to_date, class: field, data: { date_range_target: "to" }
+  - if earliest
+    button.js-all-time.text-sm.underline.pb-2 type="button" data-action="date-range#allTime" data-date-range-from-param=earliest.to_date.iso8601 data-date-range-to-param=latest.to_date.iso8601 All time
+  div
+    = form.label :status, class: "block mb-1 text-sm"
+    = form.select :status, AssessmentStatus.options, { include_blank: "All statuses" }, class: field
+  = form.button "Filter", type: "submit", class: "cursor-pointer rounded border border-gray-300 px-4 py-2 dark:border-gray-700"
+  = form.button "Export CSV", type: "button", class: "js-export-button cursor-pointer rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900", data: { export_target: "button", action: "export#submit" }
+  span.js-export-status.text-sm role="status" data-export-target="status"
+  a.js-export-download.text-sm.underline hidden=true data-export-target="link" Download CSV

@@ -6,17 +6,17 @@ class Export < ApplicationRecord
   enum :status, { queued: "queued", processing: "processing", ready: "ready", failed: "failed" }, default: :queued
 
   normalizes :status_filter, with: ->(s) { s.presence }
-  validates :status_filter, inclusion: { in: AssessmentStatus::CANONICAL }, allow_nil: true
-  validate :range_in_order
+  validate :filter_is_valid
 
-  # The rows the file will hold. Always the export's own company; the filters only narrow.
+  # Built fresh each time from the columns, so it always reflects the current attributes.
+  def filter
+    AssessmentFilter.new(from_date:, to_date:, status: status_filter)
+  end
+
+  # The rows the file will hold. Always the export's own company; the filter only narrows.
   # No order here: the job reads it with find_each, which batches by id.
   def assessments
-    scope = company.assessments
-    scope = scope.created_from(from_date) if from_date
-    scope = scope.created_through(to_date) if to_date
-    scope = scope.with_status(status_filter) if status_filter
-    scope
+    filter.apply(company.assessments)
   end
 
   def filename
@@ -25,9 +25,8 @@ class Export < ApplicationRecord
 
   private
 
-  def range_in_order
-    return unless from_date && to_date && to_date < from_date
-
-    errors.add(:to_date, "must be on or after From")
+  def filter_is_valid
+    current = filter
+    errors.merge!(current.errors) unless current.valid?
   end
 end

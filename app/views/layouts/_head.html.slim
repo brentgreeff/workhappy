@@ -3,6 +3,8 @@ head
   meta name="viewport" content="width=device-width,initial-scale=1"
   = csrf_meta_tags
   = csp_meta_tag
+  / No icon yet; without this every page load logs a 404 for /favicon.ico.
+  link rel="icon" href="data:,"
 
   = render "layouts/theme_boot"
   = stylesheet_link_tag :app, "data-turbo-track": "reload"

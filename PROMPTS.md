@@ -111,3 +111,9 @@ Check the downloaded file with qsv: RFC 4180 valid, 300 rows, ids contiguous, ti
 > Make the export work on Heroku: object storage for the files in production, and a Procfile that runs the worker and the release phase.
 
 Why: Production still used the Disk service, and there was no Procfile. Added `aws-sdk-s3` with an `amazon` block in storage.yml driven by config vars. A Procfile with the Solid Queue supervisor inside Puma plus a `release` phase for migrations, which Task 3's release plan leans on. The S3 service builds from the config vars; Not tested against a live bucket.
+
+## 23. Task 2 part 1: the dashboard
+
+> Build the assessments dashboard, system spec first.
+
+Why: the dashboard lists the company's assessments.  with the same two filters as the export. 50 per page with a page count.

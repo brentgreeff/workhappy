@@ -1,0 +1,4 @@
+tr.js-assessment-row.border-t.border-gray-200 class="dark:border-gray-700"
+  td.py-2.pr-4 = assessment.employee.name
+  td.py-2.pr-4 = l(assessment.created_at, format: :dashboard)
+  td.py-2.pr-4 = assessment.canonical_status.humanize

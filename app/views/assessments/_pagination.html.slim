@@ -1,0 +1,6 @@
+nav.js-pagination.mt-4.flex.items-center.gap-4.text-sm
+  - if page > 1
+    = link_to "Previous", root_path(filter: filter.to_params, page: page - 1), class: "underline"
+  span.text-gray-500 class="dark:text-gray-400" Page #{page} of #{pages}
+  - if page < pages
+    = link_to "Next", root_path(filter: filter.to_params, page: page + 1), class: "underline"

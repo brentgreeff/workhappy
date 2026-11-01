@@ -17,6 +17,7 @@ RSpec.describe 'Sessions', type: :request do
       expect(response).to have_http_status :ok
       expect(response.body).to include 'js-theme-menu'
       expect(response.body).not_to include 'js-sign-out'
+      expect(response.body).not_to include 'js-main-nav'
     end
   end
 

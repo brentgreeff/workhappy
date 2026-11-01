@@ -26,6 +26,7 @@ RSpec.describe 'Assessments CSV export', type: :system do
     create(:assessment, employee:, status:, created_at: Time.zone.parse(created_at))
   end
 
+  # The export posts the dashboard's filter form as it stands, applied or not.
   def export(from: nil, to: nil, status: nil)
     fill_in 'From', with: from if from
     fill_in 'To', with: to if to

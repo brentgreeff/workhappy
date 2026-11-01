@@ -10,6 +10,8 @@ html
       = render "layouts/theme_menu"
       = button_to "Sign out", session_path, method: :delete, class: "js-sign-out cursor-pointer text-sm underline"
 
+    = render "layouts/main_nav"
+
     #js-flash.container.mx-auto.px-5
       = render "layouts/flash"
 

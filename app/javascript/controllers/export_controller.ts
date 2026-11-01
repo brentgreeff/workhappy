@@ -10,16 +10,16 @@ type ExportState = {
 
 const POLL_MS = 2000
 
-// Submits the export form over fetch, then polls the export until it is ready or failed.
-// The button carries the state; the status span carries the detail.
+// Lives on the dashboard filter form. Export CSV posts that form's fields over fetch, then
+// polls the export until it is ready or failed. The status span carries the detail.
 export default class ExportController extends Controller<HTMLFormElement> {
-  static targets = ["button", "status", "link", "from", "to"]
+  static targets = ["button", "status", "link"]
+  static values = { url: String }
 
   declare readonly buttonTarget: HTMLButtonElement
   declare readonly statusTarget: HTMLElement
   declare readonly linkTarget: HTMLAnchorElement
-  declare readonly fromTarget: HTMLInputElement
-  declare readonly toTarget: HTMLInputElement
+  declare readonly urlValue: string
 
   private timer?: number
 
@@ -27,19 +27,12 @@ export default class ExportController extends Controller<HTMLFormElement> {
     window.clearTimeout(this.timer)
   }
 
-  // The earliest and latest dates the company has, rendered on the button by the server.
-  allTime({ params: { from, to } }: { params: { from: string; to: string } }): void {
-    this.fromTarget.value = from
-    this.toTarget.value = to
-  }
-
-  async submit(event: Event): Promise<void> {
-    event.preventDefault()
+  async submit(): Promise<void> {
     window.clearTimeout(this.timer)
     this.begin()
 
     try {
-      const response = await fetch(this.element.action, {
+      const response = await fetch(this.urlValue, {
         method: "POST",
         credentials: "same-origin",
         headers: { Accept: "application/json", "X-CSRF-Token": this.csrfToken() },

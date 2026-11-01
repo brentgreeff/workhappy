@@ -1,7 +1,16 @@
 en:
+  activemodel:
+    attributes:
+      assessment_filter:
+        from_date: "From"
+        to_date: "To"
+        status: "Status"
   activerecord:
     attributes:
       export:
         from_date: "From"
         to_date: "To"
         status_filter: "Status"
+  time:
+    formats:
+      dashboard: "%-d %b %Y"

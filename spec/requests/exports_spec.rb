@@ -9,7 +9,7 @@ RSpec.describe 'Exports', type: :request do
     it 'creates the export for the admin company only, whatever the body says' do
       other = create(:company)
 
-      post exports_path, params: { export: { status_filter: 'completed', company_id: other.id } }, as: :json
+      post exports_path, params: { filter: { status: 'completed', company_id: other.id } }, as: :json
 
       expect(response).to have_http_status :accepted
       expect(Export.last.company).to eq user.company
@@ -17,7 +17,7 @@ RSpec.describe 'Exports', type: :request do
     end
 
     it 'rejects an unknown status' do
-      post exports_path, params: { export: { status_filter: 'done' } }, as: :json
+      post exports_path, params: { filter: { status: 'done' } }, as: :json
 
       expect(response).to have_http_status :unprocessable_entity
       expect(Export.count).to eq 0

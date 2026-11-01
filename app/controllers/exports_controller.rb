@@ -1,8 +1,14 @@
 class ExportsController < ApplicationController
   before_action :no_store
 
+  # Posted by the dashboard's filter form, so the file holds exactly what the form says.
   def create
-    export = Current.company.exports.new(export_params.merge(user: Current.user))
+    export = Current.company.exports.new(
+      user: Current.user,
+      from_date: filter_params[:from_date],
+      to_date: filter_params[:to_date],
+      status_filter: filter_params[:status]
+    )
 
     if export.save
       ExportJob.perform_later(export)
@@ -30,8 +36,8 @@ class ExportsController < ApplicationController
     Current.company.exports.find(params[:id])
   end
 
-  def export_params
-    params.require(:export).permit(:from_date, :to_date, :status_filter)
+  def filter_params
+    params.fetch(:filter, {}).permit(:from_date, :to_date, :status)
   end
 
   def payload(export)
