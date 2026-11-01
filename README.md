@@ -34,7 +34,7 @@ To run the worker on its own instead, start the server without that variable and
 
 ## The dashboard
 
-Signing in lands on the company's assessments, newest first, 50 per page. The two filters the brief allows, a date range and a status, apply with **Filter**; **All time** fills the range with the span of the company's data. Filtering on a canonical status also matches rows still stored under a legacy spelling, so Completed finds `complete`, `comp` and `done`. Rows whose stored status maps to nothing show as Unmapped.
+Signing in lands on the company's assessments, newest first, 50 per page. The two filters the brief allows, a date range and a status, apply with **Filter**. With no dates chosen, the range shows the span of the company's data. Filtering on a canonical status also matches rows still stored under a legacy spelling, so Completed finds `complete`, `comp` and `done`. Rows whose stored status maps to nothing show as Unmapped.
 
 The score is the mean of the mapped points over the five questions in `responses_json`, 0 to 100, from the table in `app/models/assessment_scoring.rb`. An answer counts only when it is an integer or a string of digits that the table knows; nulls, missing keys, out-of-range values and free text do not. Fewer than three countable answers gives no number: the dashboard says why ("No answers", "Invalid answers" or "Insufficient answers") and the export leaves the cell blank.
 

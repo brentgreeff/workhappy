@@ -1,16 +1,15 @@
 / One form, two outcomes. Filter submits it as a GET and re-renders the list. Export CSV posts
 / the same fields to /exports over fetch (export controller), so the file holds exactly what
-/ the form says, and the page stays put while the export is polled to ready.
+/ the form says, and the page stays put while the export is polled to ready. With no dates
+/ given, the fields show the span of the company data, which is what blank means anyway.
 - field = "rounded border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
-= form_with model: filter, scope: :filter, url: root_path, method: :get, data: { controller: "date-range export", export_url_value: exports_path }, class: "js-filter-form flex flex-wrap items-end gap-4" do |form|
+= form_with model: filter, scope: :filter, url: root_path, method: :get, data: { controller: "export", export_url_value: exports_path }, class: "js-filter-form flex flex-wrap items-end gap-4" do |form|
   div
     = form.label :from_date, class: "block mb-1 text-sm"
-    = form.date_field :from_date, class: field, data: { date_range_target: "from" }
+    = form.date_field :from_date, value: filter.from_date || earliest&.to_date, class: field
   div
     = form.label :to_date, class: "block mb-1 text-sm"
-    = form.date_field :to_date, class: field, data: { date_range_target: "to" }
-  - if earliest
-    button.js-all-time.text-sm.underline.pb-2 type="button" data-action="date-range#allTime" data-date-range-from-param=earliest.to_date.iso8601 data-date-range-to-param=latest.to_date.iso8601 All time
+    = form.date_field :to_date, value: filter.to_date || latest&.to_date, class: field
   div
     = form.label :status, class: "block mb-1 text-sm"
     = form.select :status, AssessmentFilter.options, { include_blank: "All statuses" }, class: field

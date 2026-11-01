@@ -47,9 +47,7 @@ RSpec.describe 'Assessments CSV export', type: :system do
     expect(exported_ids).to contain_exactly(a1.id, a2.id, a3.id, a4.id, a5.id)
   end
 
-  it 'fills the full range of the company data with All time' do
-    click_button 'All time'
-
+  it 'prefills the date range with the span of the company data' do
     expect(find_field('From').value).to eq '2026-01-10'
     expect(find_field('To').value).to eq '2026-04-01'
     export

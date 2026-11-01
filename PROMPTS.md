@@ -147,3 +147,9 @@ Why: Solid Queue stores the exception message verbatim in its failed-jobs table,
 > Keep TypeScript minimal: remove the light/dark/system theme menu but keep following the operating system's theme.
 
 Why: The brief asks for TypeScript only for the export UI. Dark mode now comes from the browser's colour-scheme preference in CSS alone, so the menu, its controller and the pre-paint script are gone. The TypeScript left is the export controller and the date-range button.
+
+## 29. Prefill the dates, drop All time
+
+> The date fields are blank on page load. Prefill them with the full span of the company's data and remove the All time button.
+
+Why: Blank dates already meant all time, so the button only copied that span into the fields. The server now renders the earliest and latest dates as the field values when none are given, which removes a TypeScript controller. The export controller is the only TypeScript left, which is what the brief asks for.
