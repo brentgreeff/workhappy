@@ -17,6 +17,13 @@ RSpec.describe 'Exports', type: :request do
       expect(response.parsed_body).to include('status' => 'queued', 'download_url' => nil)
     end
 
+    it 'is a bad request without the filter fields' do
+      post exports_path, params: {}, as: :json
+
+      expect(response).to have_http_status :bad_request
+      expect(Export.count).to eq 0
+    end
+
     it 'rejects an unknown status' do
       post exports_path, params: { filter: { status: 'done' } }, as: :json
 

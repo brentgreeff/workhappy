@@ -1,5 +1,5 @@
 class Export < ApplicationRecord
-  belongs_to :company
+  belongs_to :company, default: -> { user.company }
   belongs_to :user
   has_one_attached :file, dependent: :purge_later
 
