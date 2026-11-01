@@ -117,3 +117,15 @@ Why: Production still used the Disk service, and there was no Procfile. Added `a
 > Build the assessments dashboard, system spec first.
 
 Why: the dashboard lists the company's assessments.  with the same two filters as the export. 50 per page with a page count.
+
+## 24. Task 2 part 2: the score
+
+> Define scoring as a mapping object. We dont have scoring logic in requirements. Must be at least 3 answers for a score. Add it to the dashboard and the export.
+
+Why: Answers are ratings, not right or wrong, so mapping is an assumption. points per answer per question. Score is the mean over answers that map. A lookup cannot produce a number from junk, which is the assessment: "blank or obviously off": null, a missing key, "n/a" or a 6 does not map.
+
+## 25. Why there is no score
+
+> On localhost I see "Insufficient answers", but a missing score can also be invalid data. Distinguish them.
+
+Why: One label for three situations hid the difference between an employee who never answered, data that is broken, and a form that is simply thin. The dashboard now says "No answers", "Invalid answers" or "Insufficient answers"; the number and the export are unchanged.

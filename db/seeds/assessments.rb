@@ -37,9 +37,13 @@ def answer(rng)
   end
 end
 
+# A form whose every answer is unusable: the "n/a" era, an out-of-range value, a null.
+JUNK_ANSWERS = [nil, "n/a", 6, ""].freeze
+
 def responses(rng)
   return nil if rng.rand(100) < 3
   return {} if rng.rand(100) < 3
+  return QUESTIONS.to_h { |q| [q, JUNK_ANSWERS[rng.rand(JUNK_ANSWERS.size)]] } if rng.rand(100) < 2
 
   answers = QUESTIONS.to_h { |q| [q, answer(rng)] }.reject { |_, v| v == :missing }
   answers["comments"] = COMMENTS[rng.rand(COMMENTS.size)]

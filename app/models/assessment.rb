@@ -26,6 +26,15 @@ class Assessment < ApplicationRecord
     AssessmentStatus.normalize(status) || AssessmentStatus::UNMAPPED
   end
 
+  # 0 to 100, or nil when the answers are too thin or too broken to score; unscored_reason says which.
+  def score
+    AssessmentScoring.score(responses_json)
+  end
+
+  def unscored_reason
+    AssessmentScoring.reason(responses_json)
+  end
+
   private
 
   def employee_belongs_to_company

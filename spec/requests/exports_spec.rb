@@ -1,4 +1,5 @@
 require 'rails_helper'
+require 'csv'
 
 RSpec.describe 'Exports', type: :request do
   let(:user) { create(:user) }
@@ -59,6 +60,19 @@ RSpec.describe 'Exports', type: :request do
       expect(response.headers['Content-Disposition']).to include('attachment', export.filename)
       expect(response.headers['Cache-Control']).to include 'no-store'
       expect(response.body.lines.first.chomp).to eq 'id,created_at,status,score'
+    end
+
+    it 'carries the same score the dashboard shows, blank when there is none' do
+      scored = create(:assessment, employee: create(:employee, company: user.company))
+      thin = create(:assessment, employee: scored.employee, responses_json: { 'posture' => 4 })
+      export = create(:export, user:)
+      perform_enqueued_jobs { ExportJob.perform_later(export) }
+
+      get download_export_path(export)
+
+      rows = CSV.parse(response.body, headers: true).to_h { |row| [row['id'].to_i, row['score']] }
+      expect(rows[scored.id]).to eq '65'
+      expect(rows[thin.id]).to be_nil
     end
   end
 end

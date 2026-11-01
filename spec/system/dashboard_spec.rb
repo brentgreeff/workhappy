@@ -73,6 +73,19 @@ RSpec.describe 'Assessments dashboard', type: :system do
       expect(rows).to be_empty
     end
 
+    it 'shows a score for answered assessments and says why when there is none' do
+      oldest, next_oldest, third = company.assessments.order(:created_at).first(3)
+      oldest.update_columns(responses_json: { 'posture' => 4, 'comments' => 'ok' })
+      next_oldest.update_columns(responses_json: { 'posture' => nil, 'screen' => 'n/a' })
+      third.update_columns(responses_json: nil)
+      visit root_path
+
+      # Rows are newest first, so the three doctored rows are the last three.
+      scores = all('.js-score').map(&:text)
+      expect(scores.first).to eq '65'
+      expect(scores.last(3)).to eq ['No answers', 'Invalid answers', 'Insufficient answers']
+    end
+
     it 'exports the rows currently filtered' do
       filter(status: 'Completed')
       click_button 'Export CSV'

@@ -15,10 +15,9 @@ class ExportJob < ApplicationJob
     Tempfile.create(["export-#{export.id}-", ".csv"]) do |file|
       csv = CSV.new(file)
       csv << HEADER
-      export.assessments.select(:id, :created_at, :status).find_each(batch_size: 1_000) do |assessment|
-        # Only derived or non-identifying columns leave the system. The score lands with
-        # the dashboard work; until then the column is present and empty.
-        csv << [assessment.id, assessment.created_at.iso8601, assessment.canonical_status, nil]
+      # responses_json is read to compute the score and never written out.
+      export.assessments.select(:id, :created_at, :status, :responses_json).find_each(batch_size: 1_000) do |assessment|
+        csv << [assessment.id, assessment.created_at.iso8601, assessment.canonical_status, assessment.score]
         rows += 1
       end
       csv.flush
