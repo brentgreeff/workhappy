@@ -68,6 +68,18 @@ Run the status census before and after the status backfill to prove the mapping.
 
 `Procfile` runs one web dyno with the Solid Queue supervisor inside Puma, and `bin/rails db:migrate` as the release phase. Export files go to a bucket, because dynos do not share a disk and lose it on restart. Config vars: `RAILS_MASTER_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET`, and optionally `AWS_REGION` (default `eu-west-2`). `DATABASE_URL` comes from the Postgres add-on. This wiring has not been exercised against a live app in this repository.
 
+## Measuring the dashboard
+
+The one performance change is an index on `assessments (company_id, created_at, id)`. The before and after numbers in [SOLUTION.md](SOLUTION.md) come from three rake tasks. Safe to rerun. production guarded.
+
+```sh
+bin/rails assessments:seed_large            # a third company, Atlas Manufacturing, with 2,000,000 assessments; about four minutes (admin@atlas.example / password)
+bin/rails assessments:explain               # EXPLAIN (ANALYZE, BUFFERS) of the count and page statements without the index, with a two-column candidate, and with the index
+bin/rails assessments:bench                 # count, page and whole-request times for four dashboard scenarios, before and after the index
+```
+
+`explain` and `bench` print before and after in one run: each schema state is forced inside a database transaction that is rolled back, so they work whether the index exists or not. Each task also records whether the index existed when it started and restores exactly that at the end, even after an interrupt, and prints the index list to prove it. Run them with nothing else using the database; the dropped index holds an exclusive lock on the table until the rollback.
+
 ## Checks
 
 ```sh

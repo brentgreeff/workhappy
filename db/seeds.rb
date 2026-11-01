@@ -4,9 +4,8 @@ abort "Refusing to seed demo data into production" if Rails.env.production?
 load Rails.root.join("db/seeds/employees.rb")
 load Rails.root.join("db/seeds/assessments.rb")
 
-# Fixed so the dataset is identical on every machine and every day; SOLUTION.md quotes
-# measurements against it.
-ANCHOR = Time.zone.parse("2026-10-31 12:00")
+# Fixed so the dataset is identical on every machine and every day.
+ANCHOR = DemoData::ANCHOR
 
 # Sign in as either admin to see that the other company's data never shows.
 demo_companies = {
