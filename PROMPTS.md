@@ -135,3 +135,9 @@ Why: One label for three situations hid the difference between an employee who n
 > We need a set of scripts that can show the performance issue against a large data-set, lets say 2 million assessments. It should check if the index already exists, remove it if it does, then run a before index explain - print numnbers, then it must add the index and run explain again - print the results. The scripts must check index state before running - so that running the scripts does not alter the DB schema. - must be idempotent.
 
 Why: The page statement went from reading every row of the company and sorting - to walking 50 index entries with no sort node; the two-column candidate left an incremental sort for the id tie-break. See readme and solution for details.
+
+## 27. Keep row data out of failed export jobs
+
+> When an export fails, what ends up in the failed job record and in the logs? Force a failure and check. Don't swallow the exception.
+
+Why: Solid Queue stores the exception message verbatim in its failed-jobs table, and the job log prints it at a level production keeps, so a message that quoted an answer would leak in both places. The job now marks the export failed with a generic message and re-raises its own error, carrying only the original class name and the original backtrace. The job still fails and can be retried.

@@ -6,7 +6,12 @@ class ExportJob < ApplicationJob
   queue_as :default
   limits_concurrency to: 1, key: ->(export) { export.company_id }
 
-  HEADER = %w[id created_at status score].freeze
+HEADER = %w[id created_at status score].freeze
+
+# What a failed export re-raises. The original message can carry row data (an answer, an
+# email) and both the failed-jobs table and the job log store the message verbatim, so only
+# the class name travels; the original backtrace is kept, and the original is the cause.
+class Failed < StandardError; end
 
   def perform(export)
     export.processing!
@@ -28,6 +33,6 @@ class ExportJob < ApplicationJob
     export.update!(status: :ready, row_count: rows)
   rescue StandardError => e
     export.update!(status: :failed, error_message: "Export failed. Please try again.")
-    raise e
+    raise Failed, e.class.name, e.backtrace
   end
 end
