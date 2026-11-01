@@ -141,3 +141,9 @@ Why: The page statement went from reading every row of the company and sorting -
 > When an export fails, what ends up in the failed job record and in the logs? Force a failure and check. Don't swallow the exception.
 
 Why: Solid Queue stores the exception message verbatim in its failed-jobs table, and the job log prints it at a level production keeps, so a message that quoted an answer would leak in both places. The job now marks the export failed with a generic message and re-raises its own error, carrying only the original class name and the original backtrace. The job still fails and can be retried.
+
+## 28. Drop the theme menu
+
+> Keep TypeScript minimal: remove the light/dark/system theme menu but keep following the operating system's theme.
+
+Why: The brief asks for TypeScript only for the export UI. Dark mode now comes from the browser's colour-scheme preference in CSS alone, so the menu, its controller and the pre-paint script are gone. The TypeScript left is the export controller and the date-range button.

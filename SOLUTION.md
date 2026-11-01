@@ -112,7 +112,7 @@ Case and whitespace are ignored. The five canonical values map to themselves. `c
 
 Unknowns are not guessed. A missing status says nothing about whether action is required; `archived` could hide a record or feed a purge, `pending` would put it on someone's list. They stay visible and counted until the business agrees the rule.
 
-### The backfill: built and tested, not run in production
+### The backfill: planned, not run
 
 Adding the `status_v2` column will be a standard rails migration, but the backfill must not run from a migration.
 
@@ -131,6 +131,18 @@ WHERE id BETWEEN :from AND :to AND status_v2 IS NULL AND LOWER(TRIM(status)) IN 
 ```
 
 then enqueues the next range with the cursor as its argument. `status_v2 IS NULL` makes it idempotent and lets a concurrent user edit win. No `updated_at` change, no callbacks. A lock wait or timeout rolls the batch back and retries the same range with backoff. The queue can be paused if there ar issues.
+
+### Release and rollback
+
+1. **Backup**: `heroku pg:backups:capture`. Live.
+2. **Release 1**: the new column, CHECK `NOT VALID`, writes to `status_v2`. Live. Rollback: `heroku rollback`; the column can stay.
+3. **Backfill** from a one-off dyno. Live, off-peak. Rollback: pause the queue; readers still fall back to `status`.
+4. **Verify**: no mappable row left with `status_v2` NULL. Live.
+5. **Release 2**: read `status_v2` only. Live. Rollback: `heroku rollback`.
+6. **Constrain**: validate the CHECK, then `NOT NULL`, once the unknowns are resolved. Low-traffic window: validation scans the table. Rollback: drop the constraint.
+7. **Drop the old column** after a retention period. Low-traffic window. Rollback: restore from the backup.
+
+A restore loses every write since the capture, so it is only for a damaged table, never the routine rollback.
 
 ### Do on demo/ staging first
 

@@ -7,7 +7,6 @@ html
   body.min-h-screen.bg-white.text-gray-900 class="dark:bg-gray-900 dark:text-gray-100"
     = render layout: "layouts/header" do
       span.text-sm.text-gray-500 class="dark:text-gray-400" = Current.user.email_address
-      = render "layouts/theme_menu"
       = button_to "Sign out", session_path, method: :delete, class: "js-sign-out cursor-pointer text-sm underline"
 
     = render "layouts/main_nav"

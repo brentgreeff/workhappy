@@ -7,10 +7,6 @@
 @source not "../builds";
 @source not "../../../node_modules";
 
-/* Class-driven dark mode: the <html> class is set before first paint from localStorage or
-   the OS preference (layouts/_head), and the theme menu toggles it. */
-@custom-variant dark (&:where(.dark, .dark *));
-
 /* Default gray is blue-tinted; remap to zinc so gray-* utilities render ash. */
 @theme {
   --color-gray-50: #fafafa;
