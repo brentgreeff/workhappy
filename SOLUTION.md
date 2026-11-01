@@ -141,6 +141,7 @@ then enqueues the next range with the cursor as its argument. `status_v2 IS NULL
 5. **Release 2**: read `status_v2` only. Live. Rollback: `heroku rollback`.
 6. **Constrain**: validate the CHECK, then `NOT NULL`, once the unknowns are resolved. Low-traffic window: validation scans the table. Rollback: drop the constraint.
 7. **Drop the old column** after a retention period. Low-traffic window. Rollback: restore from the backup.
+8. **Rename `status_v2` to `status`**, optional. Needs a low-traffic window, not a live deploy: old dynos still query `status_v2` and raise the moment the rename commits. Rollback: rename it back.
 
 A restore loses every write since the capture, so it is only for a damaged table, never the routine rollback.
 
