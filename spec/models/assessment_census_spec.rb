@@ -3,8 +3,9 @@ require 'rails_helper'
 RSpec.describe AssessmentCensus do
   let(:employee) { create(:employee) }
 
-  def assessment(**attrs)
-    create(:assessment, employee:, **attrs)
+  # The census exists for legacy data, which the model would now refuse to create.
+  def assessment(status: 'completed', responses_json: nil)
+    legacy_assessment(employee:, status:, responses_json:)
   end
 
   describe '.statuses' do

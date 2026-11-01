@@ -4,22 +4,30 @@ class AssessmentFilter
   include ActiveModel::Model
   include ActiveModel::Attributes
 
+  STATUSES = (AssessmentStatus::CANONICAL + [AssessmentStatus::UNMAPPED]).freeze
+
   attribute :from_date, :date
   attribute :to_date, :date
   attribute :status, :string
 
-  validates :status, inclusion: { in: AssessmentStatus::CANONICAL }, allow_blank: true
+  validates :status, inclusion: { in: STATUSES }, allow_blank: true
   validate :dates_parse, :range_in_order
 
   def apply(scope)
     scope = scope.created_from(from_date) if from_date
     scope = scope.created_through(to_date) if to_date
-    scope = scope.with_status(status) if status.present?
+    scope = status == AssessmentStatus::UNMAPPED ? scope.unmapped : scope.with_status(status) if status.present?
     scope
   end
 
   def to_params
     { from_date:, to_date:, status: }.compact_blank
+  end
+
+  # The five canonical values plus "Unmapped", so rows the backfill could not resolve stay
+  # reachable on the dashboard and in the export instead of silently vanishing.
+  def self.options
+    AssessmentStatus.options + [["Unmapped", AssessmentStatus::UNMAPPED]]
   end
 
   private

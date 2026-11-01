@@ -12,8 +12,12 @@ RSpec.describe 'Assessments dashboard', type: :system do
     sign_in user
   end
 
+  # Rows as the old app left them: raw status, status_v2 NULL, so the filters' fallback branch
+  # is what these examples exercise. Answers score 65, like the factory's.
+  SCORED_ANSWERS = { 'posture' => 4, 'screen' => 3, 'chair' => 5, 'breaks' => 2, 'lighting' => 4 }.freeze
+
   def assessment(employee, created_at, status)
-    create(:assessment, employee:, status:, created_at: Time.zone.parse(created_at))
+    legacy_assessment(employee:, status:, created_at: Time.zone.parse(created_at), responses_json: SCORED_ANSWERS)
   end
 
   def rows
@@ -25,6 +29,8 @@ RSpec.describe 'Assessments dashboard', type: :system do
     fill_in 'To', with: to if to
     select status, from: 'Status' if status
     click_button 'Filter'
+    # Turbo swaps the page in after the GET; reading rows before that races the old nodes.
+    expect(page).to have_current_path(/filter%5B/)
   end
 
   context 'with a handful of assessments' do
@@ -56,6 +62,13 @@ RSpec.describe 'Assessments dashboard', type: :system do
 
       expect(rows.size).to eq 3
       expect(rows).to all(include('Completed'))
+    end
+
+    it 'lists the rows nothing maps under Unmapped, so they never vanish' do
+      filter(status: 'Unmapped')
+
+      expect(rows.size).to eq 1
+      expect(rows.first).to include('1 Apr 2026', 'Unmapped')
     end
 
     it 'combines both filters and keeps them in the form' do

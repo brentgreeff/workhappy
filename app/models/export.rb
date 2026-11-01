@@ -6,6 +6,7 @@ class Export < ApplicationRecord
   enum :status, { queued: "queued", processing: "processing", ready: "ready", failed: "failed" }, default: :queued
 
   normalizes :status_filter, with: ->(s) { s.presence }
+  validates :status_filter, inclusion: { in: AssessmentFilter::STATUSES }, allow_nil: true
   validate :filter_is_valid
 
   # Built fresh each time from the columns, so it always reflects the current attributes.

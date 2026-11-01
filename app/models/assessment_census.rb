@@ -8,6 +8,11 @@ module AssessmentCensus
     scope.group(:status).count.sort_by { |status, n| [-n, status.to_s] }.to_h
   end
 
+  # The same for the new column: only the five values and nil can appear.
+  def statuses_v2(scope = Assessment.all)
+    scope.group(:status_v2).count.sort_by { |status, n| [-n, status.to_s] }.to_h
+  end
+
   # Shapes of responses_json across the scope. Arrays, strings, numbers and JSON null are
   # counted together as non_object.
   def responses(scope = Assessment.all)

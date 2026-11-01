@@ -22,8 +22,9 @@ RSpec.describe 'Assessments CSV export', type: :system do
     sign_in user
   end
 
+  # Rows as the old app left them: raw status, status_v2 NULL.
   def assessment(created_at, status)
-    create(:assessment, employee:, status:, created_at: Time.zone.parse(created_at))
+    legacy_assessment(employee:, status:, created_at: Time.zone.parse(created_at))
   end
 
   # The export posts the dashboard's filter form as it stands, applied or not.

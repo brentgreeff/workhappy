@@ -92,4 +92,46 @@ Execution Time: 144 ms                       Execution Time: 0.03 ms
 
 ## Task 3: status normalisation and release plan
 
-To follow.
+### Idea
+
+The legacy `status` column holds ten years of free text. Rewriting it in place is too risky - it could lock the table for hours or breaks live writes during migration. Better to add a new column, `status_v2`, - it can only hold the five allowed values. After deploy the application writes to the new v2 column. When reading status - the app first checks if a value exists in `status_v2` and if its missing - it falls back to the old `status` col.
+
+The backfill script fills the new column. It doesnt matter how long this takes - it can run in a background job for hours or days. Once the job has completed and the data is validated - the reader can switch to the new column. I have run this shape before on a production table of millions of rows. The old column stays untouched as the audit trail and rollback is available because the old data is not removed.
+
+### Phase 1: safe to deploy by itself
+
+**New writes go to the `status_v2` which has validations.
+
+**Nothing locks or stalls the large table.** The migration adds a nullable column and the CHECK as `NOT VALID`: no scan, no rewrite, a catalog change that ran in 0.1 s on the 2,000,000-row tenant. The brief ACCESS EXCLUSIVE lock those statements take is bounded by a 2-second `lock_timeout` with a few retries.
+
+Once this is deployed the system can be monitored to check check that new writes are going to `status_v2` and falling back to `status` when `status_v2` is missing.
+
+### The mapping and the unknowns
+
+Case and whitespace are ignored. The five canonical values map to themselves. `complete`, `comp` and `done` map to `completed`. Everything else, including NULL, the empty string, `n/a` and `cancelled`, stays NULL and shows as Unmapped.
+
+Unknowns are not guessed. A missing status says nothing about whether action is required; `archived` could hide a record or feed a purge, `pending` would put it on someone's list. They stay visible and counted until the business agrees the rule.
+
+### The backfill: built and tested, not run in production
+
+Adding the `status_v2` column will be a standard rails migration, but the backfill must not run from a migration.
+
+Heroku already does automatic backups, but a dump can be done before the backfill runs. By in large - it is not needed - because we are not removing or chaning the old `status` data.
+
+But just in case:
+`heroku pg:backups:capture`, confirm with `pg:backups:info`, and before the backfill a rehearsed `pg:backups:restore` can be done to a demo app. Before the backup a script can collect counts of the key tables to sanity check the restore.
+
+The script is run from a throwaway dyno.
+
+The script enqueues a Solid Queue job chain. Each job takes the next 500 rows by primary key and in one short transaction with its own `lock_timeout` and `statement_timeout`, runs one UPDATE:
+
+```sql
+UPDATE assessments SET status_v2 = CASE LOWER(TRIM(status)) WHEN 'complete' THEN 'completed' ... END
+WHERE id BETWEEN :from AND :to AND status_v2 IS NULL AND LOWER(TRIM(status)) IN (known spellings)
+```
+
+then enqueues the next range with the cursor as its argument. `status_v2 IS NULL` makes it idempotent and lets a concurrent user edit win. No `updated_at` change, no callbacks. A lock wait or timeout rolls the batch back and retries the same range with backoff. The queue can be paused if there ar issues.
+
+### Do on demo/ staging first
+
+The migration and the script should both be run against staging or demo before its rolled out to production. Demo should hold a copy of prod's database.

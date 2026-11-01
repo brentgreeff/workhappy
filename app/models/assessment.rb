@@ -14,16 +14,28 @@ class Assessment < ApplicationRecord
   # inclusive, done as an exclusive bound on the next midnight so an index on created_at works.
   scope :created_from, ->(date) { where(created_at: date.in_time_zone..) }
   scope :created_through, ->(date) { where(created_at: ...(date + 1).in_time_zone) }
-  # Until the backfill runs, rows still carry legacy spellings and odd casing, so a filter for
-  # a canonical status has to match all of them.
-  scope :with_status, ->(canonical) { where("LOWER(TRIM(status)) IN (?)", AssessmentStatus.spellings(canonical)) }
+  # Status lives in two columns while the normalisation is in flight: status_v2 holds a
+  # canonical value for rows written since the change or backfilled; the legacy column is
+  # matched by spelling for the rest. The OR goes once the backfill has run.
+  scope :with_status, ->(canonical) {
+    where(status_v2: canonical)
+      .or(where(status_v2: nil).where("LOWER(TRIM(status)) IN (?)", AssessmentStatus.spellings(canonical)))
+  }
+  scope :unmapped, -> { where(status_v2: nil).where(AssessmentStatus.unmapped_arel) }
 
   # The composite foreign key enforces this at the database; the validation gives the
   # readable error.
   validate :employee_belongs_to_company
 
+  # Going forward, status_v2 is derived from whatever was written to status and must be one of
+  # the five. Only when the status is being set: an unrelated edit to a legacy row whose value
+  # maps to nothing is allowed and leaves status_v2 NULL, visibly unmapped, rather than refused
+  # or guessed. Deriving on every save would also wipe a value the backfill had filled.
+  before_validation :derive_status_v2, if: :status_being_set?
+  validate :status_maps_to_canonical, if: :status_being_set?
+
   def canonical_status
-    AssessmentStatus.normalize(status) || AssessmentStatus::UNMAPPED
+    status_v2 || AssessmentStatus.normalize(status) || AssessmentStatus::UNMAPPED
   end
 
   # 0 to 100, or nil when the answers are too thin or too broken to score; unscored_reason says which.
@@ -41,5 +53,21 @@ class Assessment < ApplicationRecord
     return if employee.nil? || employee.company_id == company_id
 
     errors.add(:employee, "must belong to the same company")
+  end
+
+  def status_being_set?
+    new_record? || will_save_change_to_status?
+  end
+
+  def derive_status_v2
+    self.status_v2 = AssessmentStatus.normalize(status)
+  end
+
+  # On :status, not :status_v2: the caller set status. The raw value is quoted so the message
+  # says what was rejected.
+  def status_maps_to_canonical
+    return if AssessmentStatus::CANONICAL.include?(status_v2)
+
+    errors.add(:status, "#{status.inspect} is not one of #{AssessmentStatus::CANONICAL.join(', ')}")
   end
 end

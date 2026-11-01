@@ -21,7 +21,7 @@ class Failed < StandardError; end
       csv = CSV.new(file)
       csv << HEADER
       # responses_json is read to compute the score and never written out.
-      export.assessments.select(:id, :created_at, :status, :responses_json).find_each(batch_size: 1_000) do |assessment|
+      export.assessments.select(:id, :created_at, :status, :status_v2, :responses_json).find_each(batch_size: 1_000) do |assessment|
         csv << [assessment.id, assessment.created_at.iso8601, assessment.canonical_status, assessment.score]
         rows += 1
       end
