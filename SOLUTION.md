@@ -34,7 +34,7 @@ Operational notes for a Heroku-like deploy: Active Storage's disk service cannot
 
 ### The score
 
-The brief says the score is "sometimes blank or obviously off" and must be "consistently present and correct under normal circumstances", but never defines it. Answers are ratings, not right or wrong, so any rule is an assumption. It is written as a table so it can be read in one glance and changed as data:
+The brief says the score is "sometimes blank or obviously off" but never defines it. Answers are ratings, not right or wrong, so any rule is an assumption. It is written as a table, readable at a glance and changed as data:
 
 ```ruby
 POINTS = {
@@ -44,25 +44,27 @@ POINTS = {
 MIN_ANSWERS = 3
 ```
 
-The score is the mean of the mapped points over the questions that have a mappable answer, rounded to a whole number. An answer counts only when it is an integer, or a string of digits. A null, a missing key, `"n/a"`, a 6, or the free-text `comments` key never becomes a number. "blank or obviously off" came from: averaging over missing keys, or `to_i` on `"n/a"` giving zero, produces a wrong number silently. A lookup cannot.
+The score is the mean of the mapped points, rounded. An answer counts only when it is an integer or a string of digits. A null, a missing key, `"n/a"`, a 6 or the free-text `comments` never becomes a number. That is where "blank or obviously off" comes from: averaging over missing keys, or `to_i` on `"n/a"` giving zero, produces a wrong number silently. A lookup cannot.
 
-When there is no score the dashboard says why, so an admin knows whether to chase the employee or the data: **No answers** (nothing stored, or no question answered), **Invalid answers** (questions answered, none usable), **Insufficient answers** (one or two usable, three needed). The export leaves the cell blank in all three cases. The same function serves the dashboard and the export, so they always agree.
+With no score the dashboard says why, so an admin knows whether to chase the employee or the data: **No answers**, **Invalid answers** (answered, none usable), **Insufficient answers** (fewer than three usable). The export leaves the cell blank. One function serves both, so they always agree.
 
 ### The measured improvement: one index
 
-**The problem.** The dashboard lists a company's assessments newest first, fifty per page, with the two filters. Before the change the only useful index on the table was `company_id`. For a large company Postgres had to read every one of its rows, sort all of them by date, and keep fifty, on every page load. That cost grows with the table. It is the brief's "slow with many records".
+**The problem.** The dashboard lists a company's assessments newest first, fifty per page. The only useful index was `company_id`, so for a large company Postgres read every row, sorted them all by date and kept fifty, on every page load. That is the brief's "slow with many records".
 
-**The change.** One index, `assessments (company_id, created_at, id)`, built concurrently so the table takes no lock while it builds. With it the page query walks the index in date order and stops after fifty entries, a date range becomes an index condition instead of a filter over every row, and the `id` column makes the order exact so no sort node remains at all.
+**The change.** One index, `assessments (company_id, created_at, id)`, built concurrently so the table is not locked. The page query walks the index in date order and stops after fifty entries; the `id` column makes the order exact, so no sort remains.
 
-**How it was measured.** Three rake tasks in the repo, so anyone can rerun them (see README, "Measuring the dashboard"):
+**How it was measured.** Three rake tasks anyone can rerun (README, "Measuring the dashboard"):
 
-- `assessments:seed_large` creates a benchmark tenant, Atlas Manufacturing, with the same messy data as the demo seed. Numbers below are for **2,000,000 assessments**.
-- `assessments:explain` prints `EXPLAIN (ANALYZE, BUFFERS)` for the count and page statements in three schema states: without the dashboard index, with a two-column candidate, and with the dashboard index.
-- `assessments:bench` times the count statement, the page statement, and the whole request through the app (signed in as the tenant's admin) for four scenarios, first without the dashboard index and then with it.
+```sh
+bin/rails assessments:seed_large   # a tenant with 2,000,000 assessments of the same messy data
+bin/rails assessments:explain      # EXPLAIN (ANALYZE, BUFFERS) without the index, with a two-column candidate, with the index
+bin/rails assessments:bench        # count, page and whole-request times for four scenarios, before and after
+```
 
-Both tasks force each schema state inside a database transaction that is rolled back, so one run prints before and after wether the index exists already or not. Each task also records whether the index existed at the start and restores exactly that at the end.
+`explain` and `bench` force each schema state inside a rolled-back transaction, so one run prints before and after, and they leave the index as they found it.
 
-**Numbers, 2,000,000 rows, one run of `assessments:bench`, whole request through the app, in milliseconds:**
+**Numbers**, 2,000,000 rows, whole request, in milliseconds:
 
 | Scenario | Before | After |
 |---|---|---|
@@ -71,7 +73,7 @@ Both tasks force each schema state inside a database transaction that is rolled 
 | One-year date window | 512 | 54 |
 | Status = completed | 1,306 | 428 |
 
-The page statement on its own went from **144 ms to 0.03 ms**. The plans show why:
+The page statement on its own went from **144 ms to 0.03 ms**:
 
 ```text
 Before (page, no filter)                     After
@@ -82,20 +84,11 @@ Limit                                        Limit
 Execution Time: 144 ms                       Execution Time: 0.03 ms
 ```
 
-**Why this index and not something else.**
+**Why this index.** It leads on `company_id`, so tenant scoping gets cheaper too. The two-column `(company_id, created_at)` still needed a sort for the `id` tie-break; the third column removes it. A `status` index would do nothing yet: the filter is `LOWER(TRIM(status))` so legacy spellings match, and no plain index serves that until Task 3 fixes the data. Keyset pagination or dropping the page count were bigger changes for smaller gains.
 
-- It leads on `company_id`, so it is a tenant index and the multi-tenant scoping gets cheaper too.
-- The three-column form was chosen over `(company_id, created_at)` because the plans showed the two-column one still needed an incremental sort for the `id` tie-break. The extra column costs eight bytes an entry and removes the last sort.
-- A `status` index would do nothing yet: the status filter is `LOWER(TRIM(status))` so that legacy spellings match, and no ordinary index serves an expression it was not built on. That is fixed by Task 3, after which a plain index on the constrained column becomes possible.
-- Keyset pagination, caching the count, or dropping the page total were all bigger changes to the page for smaller gains. The brief asked for the smallest reasonable change.
+**Not fixed.** The page count still scales with matching rows, and the status filter is still slow (428 ms) for the reason above. A failed concurrent build leaves an invalid index to drop before retrying.
 
-**What it does not fix yet**
-
-- The page count ("Page 1 of 40,000") is bounded by how many rows match, not by sorting. A date window makes it an index-only scan (81 ms to 24 ms).
-- The status filter is still slow (428 ms after) because of the expression above.
-- Build time: 6 seconds concurrently at 2M rows. The migration uses `algorithm: :concurrently` and `disable_ddl_transaction!`; a concurrent build that fails leaves an invalid index that must be dropped before retrying.
-
-**Guards.** A spec asks Postgres for the page plan on a seeded company and asserts the index is used and no Sort node appears; it failed before the migration and passes after. A request spec asserts the page runs the same number of statements for one row as for fifty, so a future column cannot reintroduce a per-row query.
+**Guards.** A spec asserts the page plan uses the index with no Sort node; it failed before the migration. A request spec asserts one row and fifty rows run the same number of statements, so no per-row query creeps back.
 
 ## Task 3: status normalisation and release plan
 
