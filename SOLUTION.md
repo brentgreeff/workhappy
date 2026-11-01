@@ -102,7 +102,7 @@ The backfill script fills the new column. It doesnt matter how long this takes -
 
 **New writes go to the `status_v2` which has validations.
 
-**Nothing locks or stalls the large table.** The migration adds a nullable column and the CHECK as `NOT VALID`: no scan, no rewrite, a catalog change that ran in 0.1 s on the 2,000,000-row tenant. The brief ACCESS EXCLUSIVE lock those statements take is bounded by a 2-second `lock_timeout` with a few retries.
+**Nothing locks or stalls the large table.** The migration adds a nullable column and the CHECK as `NOT VALID`: no scan, no rewrite, a catalog change that ran in 0.1 s on the 2,000,000-row tenant. The brief ACCESS EXCLUSIVE lock those statements take is bounded by a 2-second `lock_timeout`: if the lock is not free in time the release fails and is rerun, rather than queueing every other query behind it.
 
 Once this is deployed the system can be monitored to check check that new writes are going to `status_v2` and falling back to `status` when `status_v2` is missing.
 

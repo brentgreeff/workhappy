@@ -56,7 +56,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_131128) do
     t.index ["employee_id"], name: "index_assessments_on_employee_id"
   end
 
-  add_check_constraint "assessments", "status_v2 IS NULL OR (status_v2::text = ANY (ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'needs_follow_up'::character varying, 'archived'::character varying]::text[]))", name: "assessments_status_v2_allowed", validate: false
+  add_check_constraint "assessments", "status_v2::text = ANY (ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'needs_follow_up'::character varying, 'archived'::character varying]::text[])", name: "assessments_status_v2_allowed", validate: false
 
   create_table "companies", force: :cascade do |t|
     t.string "name", null: false
@@ -87,7 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_131128) do
     t.datetime "updated_at", null: false
     t.index ["company_id"], name: "index_exports_on_company_id"
     t.index ["user_id"], name: "index_exports_on_user_id"
-    t.check_constraint "status IS NOT NULL AND (status::text = ANY (ARRAY['queued'::character varying::text, 'processing'::character varying::text, 'ready'::character varying::text, 'failed'::character varying::text]))", name: "exports_status_allowed"
+    t.check_constraint "status IS NOT NULL AND (status::text = ANY (ARRAY['queued'::character varying, 'processing'::character varying, 'ready'::character varying, 'failed'::character varying]::text[]))", name: "exports_status_allowed"
   end
 
   create_table "sessions", force: :cascade do |t|
